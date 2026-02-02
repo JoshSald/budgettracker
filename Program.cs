@@ -1,4 +1,11 @@
-﻿while (true)
+﻿using BudgetTracker.Models;
+using BudgetTracker.Services;
+
+var storage = new StorageService("data");
+var transactionService = new TransactionService(storage);
+var logger = new LoggerService("logs", transactionService);
+
+while (true)
 {
     Console.Clear();
     Console.WriteLine("==== Budget Tracker ====");
@@ -13,15 +20,15 @@
     switch (input)
     {
         case "1":
-            Console.WriteLine("Add transaction (coming soon)");
+            AddTransaction(transactionService);
             break;
 
         case "2":
-            Console.WriteLine("Remove transaction (coming soon)");
+            RemoveTransaction(transactionService);
             break;
 
         case "3":
-            Console.WriteLine("Report (coming soon)");
+            Console.WriteLine("Report coming soon");
             break;
 
         case "0":
@@ -34,4 +41,63 @@
 
     Console.WriteLine("\nPress any key...");
     Console.ReadKey();
+}
+
+static void AddTransaction(TransactionService service)
+{
+    try
+    {
+        Console.Write("Type (income/expense): ");
+        var typeInput = Console.ReadLine()?.Trim().ToLower();
+
+        var type = typeInput switch
+        {
+            "income" or "i"=> TransactionType.Income,
+            "expense" or "e" => TransactionType.Expense,
+            _ => throw new Exception("Invalid type.")
+        };
+
+        Console.Write("Description: ");
+        var description = Console.ReadLine() ?? "";
+
+        Console.Write("Amount: ");
+        if (!decimal.TryParse(Console.ReadLine(), out var amount))
+            throw new Exception("Invalid amount.");
+
+        var t = service.Add(type, description, amount);
+
+        Console.WriteLine($"\nSaved with Id: {t.Id}");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"\nError: {ex.Message}");
+    }
+}
+static void RemoveTransaction(TransactionService service)
+{
+    try
+    {
+        Console.Write("Date (yyyy-MM-dd): ");
+        var dateInput = Console.ReadLine();
+
+        if (!DateOnly.TryParse(dateInput, out var date))
+            throw new Exception("Invalid date format.");
+
+        Console.Write("Transaction Id: ");
+        var idInput = Console.ReadLine();
+
+        if (!Guid.TryParse(idInput, out var id))
+            throw new Exception("Invalid Id format.");
+
+        var removed = service.Remove(id, date);
+
+        if (removed)
+            Console.WriteLine("\nTransaction removed.");
+        else
+            Console.WriteLine("\nTransaction not found.");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"\nError: {ex.Message}");
+    }
 }
