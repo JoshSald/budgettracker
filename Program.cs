@@ -1,6 +1,9 @@
 ﻿using BudgetTracker.Models;
 using BudgetTracker.Services;
 
+Directory.CreateDirectory("data");
+Directory.CreateDirectory("logs");
+
 var storage = new StorageService("data");
 var transactionService = new TransactionService(storage);
 var logger = new LoggerService("logs", transactionService);
@@ -28,7 +31,7 @@ while (true)
             break;
 
         case "3":
-            Console.WriteLine("Report coming soon");
+            GenerateReport(transactionService);
             break;
 
         case "0":
@@ -95,6 +98,43 @@ static void RemoveTransaction(TransactionService service)
             Console.WriteLine("\nTransaction removed.");
         else
             Console.WriteLine("\nTransaction not found.");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"\nError: {ex.Message}");
+    }
+}
+static void GenerateReport(TransactionService service)
+{
+    try
+    {
+        Console.Write("Start date (yyyy-MM-dd): ");
+        if (!DateOnly.TryParse(Console.ReadLine(), out var start))
+            throw new Exception("Invalid start date.");
+
+        Console.Write("End date (yyyy-MM-dd): ");
+        if (!DateOnly.TryParse(Console.ReadLine(), out var end))
+            throw new Exception("Invalid end date.");
+
+        if (end < start)
+            throw new Exception("End date cannot be before start date.");
+
+        var transactions = service.QueryRange(start, end);
+
+        var income = transactions
+            .Where(t => t.Type == TransactionType.Income)
+            .Sum(t => t.Amount);
+
+        var expense = transactions
+            .Where(t => t.Type == TransactionType.Expense)
+            .Sum(t => t.Amount);
+
+        var net = income - expense;
+
+        Console.WriteLine("\n==== Report ====");
+        Console.WriteLine($"Income:  {income:C}");
+        Console.WriteLine($"Expense: {expense:C}");
+        Console.WriteLine($"Net:     {net:C}");
     }
     catch (Exception ex)
     {
