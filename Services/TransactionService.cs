@@ -1,3 +1,4 @@
+using BudgetTracker.Events;
 using BudgetTracker.Models;
 
 namespace BudgetTracker.Services;
@@ -6,7 +7,7 @@ public class TransactionService
 {
     private readonly StorageService _storage;
 
-    public event EventHandler<Transaction>? TransactionAdded;
+    public event EventHandler<TransactionAddedEventArgs>? TransactionAdded;
 
     public TransactionService(StorageService storage)
     {
@@ -19,7 +20,7 @@ public class TransactionService
         decimal amount)
     {
         if (amount <= 0)
-            throw new ArgumentException("Fool of a Took! Amount must be greater than 0.");
+            throw new ArgumentException("Fool of a Took!Your amount must be greater than 0.");
 
         var now = DateTime.Now;
 
@@ -35,7 +36,10 @@ public class TransactionService
 
         _storage.Append(transaction);
 
-        TransactionAdded?.Invoke(this, transaction);
+        TransactionAdded?.Invoke(
+            this,
+            new TransactionAddedEventArgs(transaction)
+        );
 
         return transaction;
     }
